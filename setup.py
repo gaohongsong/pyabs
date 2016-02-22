@@ -6,7 +6,7 @@ NAME = "pyabs"
 DESCRIPTION = "ssh over proxy using paramiko"
 AUTHOR = "gmaclinuxer"
 AUTHOR_EMAIL = "gmaclinuxer@gmail.com"
-URL = ""
+URL = "https://github.com/gmaclinuxer/pyabs/"
 # VERSION = __import__(PACKAGE).__version__
 VERSION = "1.0.1"
 
