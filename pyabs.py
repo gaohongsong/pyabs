@@ -8,9 +8,9 @@ import logging
 import posixpath
 import datetime
 import time
-import traceback
+# import traceback
 import paramiko
-import gevent
+# import gevent
 
 from logging import DEBUG, INFO, WARNING, ERROR, CRITICAL
 
@@ -35,9 +35,9 @@ def logto(filename, name=__name__, level=DEBUG):
     return logger
 
 # paramiko日志
-paramiko.util.log_to_file('paramiko.txt')
+paramiko.util.log_to_file('paramiko.log')
 # pyabs日志
-logger = logto('pyabs_log.txt', level=INFO)
+logger = logto('pyabs.log', level=INFO)
 
 # =================================================================================================================
 # configs

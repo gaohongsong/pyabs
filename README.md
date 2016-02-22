@@ -1,8 +1,3 @@
-# 自动化运维工具箱 - pyabs
+# python ssh toolbox - pyabs
 ================================
-#简单介绍：
-
-    基于paramiko开发的python库，支持跨机器SSH认证及跨机器执行命令，认证方式支持密码和密钥认证，支持gevent并发认证。可用于开发自动化运维工具。
-    
-#使用方法：
-    ...
+    pyabs is a paramiko extension lib，it support ssh connect and excute cmd over proxy, which support gevent for high concurrency。
