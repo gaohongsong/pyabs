@@ -4,6 +4,12 @@ import os
 from pyabs import PyABS, SUCCESS, logger, SFTP_SUCCESS
 
 def test():
+    '''
+    connection map
+    (localhost)pabs->proxy--|-->client1->client3
+                   |        |-->client2->client4
+                   |-->client5
+    '''
     # auth with password
     proxy = {'host': '11.11.1.2', 'port': 22, 'username': 'vagrant',
              'password': 'vagrant', 'auth_type': 'p'}
@@ -22,12 +28,7 @@ def test():
     pabs = PyABS(proxy)
     # connect client5
     pclient5 = PyABS(client5)
-    '''
-    connection map
-    (localhost)pabs->proxy--|-->client1->client3
-                   |        |-->client2->client4
-                   |-->client5
-    '''
+
     # ===========================================pabs->proxy==================================
     logger.warning('++++++++++++++++pabs->proxy++++++++++++++++')
     code, msg = pabs.login(timeout=3)
