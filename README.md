@@ -1,6 +1,8 @@
 # python ssh toolbox - pyabs
 ================================
-    pyabs is a paramiko extension lib，it support ssh connect and excute cmd over proxy,   which support gevent for high concurrency.
+
+    pyabs is a paramiko extension lib，it support ssh connect and excute cmd over proxy,  
+which support gevent for high concurrency.
     
 # example
     connection map
@@ -8,8 +10,8 @@
                    |        |-->client2->client4
                    |-->client5
 ```
-# -*- coding: utf-8 -*-
 # test.py
+# -*- coding: utf-8 -*-
 
 import os
 from pyabs import PyABS, SUCCESS, logger, SFTP_SUCCESS
@@ -17,18 +19,18 @@ from pyabs import PyABS, SUCCESS, logger, SFTP_SUCCESS
 def test():
     # auth with password
     proxy = {'host': '11.11.1.2', 'port': 22, 'username': 'vagrant',
-    'password': 'vagrant', 'auth_type': 'p'}
-    client1 = {'host': '11.11.1.3', 'port': 22, 'username': 'vagrant', 
-    'password': 'vagrant', 'auth_type': 'p'}
+             'password': 'vagrant', 'auth_type': 'p'}
+    client1 = {'host': '11.11.1.3', 'port': 22, 'username': 'vagrant',
+               'password': 'vagrant', 'auth_type': 'p'}
     # auth with rsa
-    client2 = {'host': '11.11.1.4', 'port': 22, 'username': 'vagrant', 
-    'password': 'vagrant', 'auth_type': 'r', 'key_path': '~/.ssh/id_dsa'}
-    client3 = {'host': '11.11.1.5', 'port': 22, 'username': 'vagrant', 
-    'password': 'vagrant', 'auth_type': 'r', 'key_path': '~/.ssh/id_rsa'}
-    client4 = {'host': '11.11.1.6', 'port': 22, 'username': 'vagrant', 
-    'password': 'vagrant', 'auth_type': 'p'}
-    client5 = {'host': '11.11.1.7', 'port': 22, 'username': 'vagrant', 
-    'password': 'vagrant', 'auth_type': 'p'}
+    client2 = {'host': '11.11.1.4', 'port': 22, 'username': 'vagrant',
+               'password': 'vagrant', 'auth_type': 'r','key_path': '~/.ssh/id_dsa'}
+    client3 = {'host': '11.11.1.5', 'port': 22, 'username': 'vagrant',
+               'password': 'vagrant', 'auth_type': 'r','key_path': '~/.ssh/id_rsa'}
+    client4 = {'host': '11.11.1.6', 'port': 22, 'username': 'vagrant',
+               'password': 'vagrant', 'auth_type': 'p'}
+    client5 = {'host': '11.11.1.7', 'port': 22, 'username': 'vagrant',
+               'password': 'vagrant', 'auth_type': 'p'}
     # connect proxy
     pabs = PyABS(proxy)
     # connect client5
@@ -101,6 +103,8 @@ def test():
     else:
         logger.debug(msg)
     pclient5.close()
+
 if __name__ == '__main__':
     test()
+
 ```
