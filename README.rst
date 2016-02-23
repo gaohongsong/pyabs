@@ -8,3 +8,7 @@
 
 使用方法：
 -------------
+    参考test目录下测测试文件
+    1.test.py：直接测试
+    2.test_with_celery.py：celery任务测试
+    3.test_with_gevent.py：gevent协程测试
