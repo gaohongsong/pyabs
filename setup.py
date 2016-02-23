@@ -8,7 +8,7 @@ AUTHOR = "gmaclinuxer"
 AUTHOR_EMAIL = "gmaclinuxer@gmail.com"
 URL = "https://github.com/gmaclinuxer/pyabs/"
 # VERSION = __import__(PACKAGE).__version__
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 def read(fname):
     # return open(os.path.join(os.path.dirname(__path__), fname)).read()
