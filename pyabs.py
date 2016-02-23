@@ -1,4 +1,4 @@
-# coding=utf8
+# -*- coding: utf-8 -*-
 import os
 import re
 import stat
@@ -14,7 +14,7 @@ import paramiko
 
 from logging import DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-# pyabs日志
+# pyabs log config
 def logto(filename, name=__name__, level=DEBUG):
     # filename = '%s_%s.text' % (filename, datetime.datetime.now().strftime('%Y_%m_%d'))
     # f = os.path.join(os.path.realpath('.'), filename)
@@ -34,21 +34,22 @@ def logto(filename, name=__name__, level=DEBUG):
         logger.addHandler(stream_handler)
     return logger
 
-# paramiko日志
+# paramiko log file
 paramiko.util.log_to_file('paramiko.log')
-# pyabs日志
+# pyabs log file
 logger = logto('pyabs.log', level=INFO)
 
 # =================================================================================================================
 # configs
-REMOTE_KEY_PATH = ''
-LOCAL_KEY_PATH = ''
+REMOTE_KEY_PATH = 'keys'
+LOCAL_KEY_PATH = 'keys'
 # =================================================================================================================
 # PyABS status code
 SUCCESS = 1
 SEND_KEY_SUCCESS = 100
 SFTP_SUCCESS = 200
 
+# PyABS error code
 AUTH_TYPE_ERR = -4001
 TIMEOUT_ERR = -4002
 SSH_LOGIN_EXP = -4003
@@ -64,10 +65,17 @@ SEND_KEY_EXP = -4012
 SSH_EXP = -4013
 SCP_EXP = -4014
 SFTP_EXP = -4015
+
 # =================================================================================================================
+# custom exception for PyABS
+class PyABSException(Exception):
+    pass
+class ExecuteException(PyABSException):
+    pass
+
 class SshInterpreter(object):
     '''
-    决策机
+    state machine for ssh interaction
     '''
     displaypassinfo = "assword:"
     displaypassinfo1 = "Password:"
@@ -222,6 +230,12 @@ class SshInterpreter(object):
             self.wait(self.SLEEP_INTERVAL)
 
     def wait_for_cmd_over(self, chan, timeout=5):
+        '''
+        wait for cmd over of a channel
+        :param chan:
+        :param timeout:
+        :return:
+        '''
         buff, res = '', ''
         old_timeout = chan.gettimeout()
         chan.settimeout(timeout)
@@ -242,6 +256,13 @@ class SshInterpreter(object):
         return self.chan
 
     def set_channel(self, chan, blocking=0, timeout=-1):
+        '''
+        set up a channel's socket options
+        :param chan:
+        :param blocking: 0/1
+        :param timeout:
+        :return:
+        '''
         # set socket read time out
         chan.setblocking(blocking=blocking)
         # settimeout(0) -> setblocking(0)
@@ -250,6 +271,10 @@ class SshInterpreter(object):
         chan.settimeout(timeout=timeout)
 
     def close_channel(self):
+        '''
+        close current channel
+        :return:
+        '''
         try:
             logger.info('close channel-%s', self.chan.get_id())
             self.safe_close(self.chan)
@@ -264,6 +289,13 @@ class SshInterpreter(object):
             pass
 
     def execute(self, chan, cmd, timeout):
+        '''
+        execute cmd in a channel
+        :param chan:
+        :param cmd:
+        :param timeout:
+        :return:
+        '''
         buff = ''
         try:
             logger.debug('start execute: [ %s ]', cmd)
@@ -279,10 +311,21 @@ class SshInterpreter(object):
         return buff
 
     def exec_command(self, cmd, timeout=5):
+        '''
+        execute cmd in current channel
+        :param cmd:
+        :param timeout:
+        :return:
+        '''
         logger.info('exec_command: [%s], wait for %ss', cmd, timeout)
         return self.execute(self.chan, cmd, timeout)
 
     def get_prompt(self, chan):
+        '''
+        send enter key and get the prompt of a channel
+        :param chan:
+        :return:
+        '''
         # send enter key and get the prompt
         prompt = '######GET_PROMPT_ERR######'
         logger.debug('send enter.')
@@ -303,7 +346,13 @@ class SshInterpreter(object):
         return prompt
 
     def set_prompt(self, chan):
+        '''
+        set a new prompt to a channel in order to make interact easy
+        :param chan:
+        :return:
+        '''
         # set a new prompt in order to make interact easy
+        is_seted = False
         chan.sendall(self.PROMPT_SET_SH + '\n')
         while True:
             try:
@@ -322,6 +371,11 @@ class SshInterpreter(object):
         return is_seted
 
     def get_and_set_prompt(self, chan):
+        '''
+        get and set a channel's prompt
+        :param chan:
+        :return:
+        '''
         old_prompt, new_prompt = '######GET_PROMPT_ERR######', ''
         old_timeout = chan.gettimeout()
         chan.settimeout(self.PROMPT_TIMEOUT)
@@ -349,7 +403,7 @@ class SshInterpreter(object):
 
     def create_cmd(self, host, port, username, src=None, dst=None, s_type='ssh', key_path=None, timeout=10):
         '''
-        根据认证类型及认证信息，生成ssh登录指令
+        create ssh or scp cmdline for different auth type
         '''
 
         # auth through password
@@ -416,6 +470,14 @@ class SshInterpreter(object):
         return buff
 
     def open_session(self, chan, cmd, password=None, auth_type='p'):
+        '''
+        establish a new ssh or scp session by execute ssh/scp cmdline
+        :param chan: current terminal session's channel
+        :param cmd: ssh/scp cmdline
+        :param password: ssh password
+        :param auth_type: 'p' or 'r'(rsa) or 'd'(dsa)
+        :return: tuple of the code and output --> (code, output)
+        '''
         output = ''
         logger.info('start open_session, auth type(%s)', self.trans.get(auth_type))
         # eat the ssh login message
@@ -461,7 +523,7 @@ class SshInterpreter(object):
             # vagrant@11.11.1.3's password:
             chan.sendall(password + '\n')
         else:
-            # 密钥认证
+            # auth by key file
             self.wait(self.WAIT_LOGIN)
         buff = ''
         # if we auth success, got ouput ends with '# ' or '$ ':
@@ -470,7 +532,7 @@ class SshInterpreter(object):
             try:
                 res = chan.recv(self.RECV_MAX_BYTE)
                 output += res
-                # 替换主机shell提示符
+                # replace default shell prompt
                 buff += self.clear(res)
                 buff = self.replace_prompt(buff, prompt)
             except socket.timeout:
@@ -502,16 +564,6 @@ class SshInterpreter(object):
                 return COMMON_ERROR, output
 
 
-# =================================================================================================================
-class PyABSException(Exception):
-    pass
-
-
-class ExecuteException(PyABSException):
-    pass
-
-
-# =================================================================================================================
 class PyTerminal(SshInterpreter):
     def __init__(self, chan):
         # super(PyTerminal, self).__init__()  # multi inherit
@@ -519,6 +571,10 @@ class PyTerminal(SshInterpreter):
         self.depth = 1
 
     def close(self):
+        '''
+        close terminals and channel
+        :return:
+        '''
         buff = ''
         logger.info('close PyTerminal terminals and channel')
         try:
@@ -533,6 +589,12 @@ class PyTerminal(SshInterpreter):
         return buff
 
     def ssh(self, server, timeout=10):
+        '''
+        ssh connect to server
+        :param server:
+        :param timeout: connection timeout
+        :return:
+        '''
         host = server.get('host')
         port = server.get('port')
         username = server.get('username')
@@ -558,6 +620,14 @@ class PyTerminal(SshInterpreter):
         return code, output
 
     def scp(self, server, src, dst, timeout=10):
+        '''
+        scp from local's src to server's dst
+        :param server:  dst server
+        :param src:  src file path
+        :param dst:  dst file path
+        :param timeout:  scp timeout
+        :return:
+        '''
         host = server.get('host')
         port = server.get('port')
         username = server.get('username')
@@ -583,17 +653,27 @@ class PyTerminal(SshInterpreter):
         return code, output
 
 
-# =================================================================================================================
 class PyABS(SshInterpreter):
     def __init__(self, server):
+        '''
+        :param server:
+                        server1: {'host': '11.11.1.4', 'port': 22, 'username': 'vagrant',
+                        'password': 'vagrant', 'auth_type': 'r','key_path': '~/.ssh/id_dsa'}
+                        server2: {'host': '11.11.1.4', 'port': 22, 'username': 'vagrant',
+                        'password': 'vagrant', 'auth_type': 'p'}
+        :return:
+        '''
         # super(PyABS, self).__init__()  # multi inherit
         SshInterpreter.__init__(self, None)
         self.server = server  # save server info
         self.client = None  # save ssh client to server
         self.terminal = []
 
-    # ***************************************************************************************
     def open_channel(self):
+        '''
+        open channel for current server
+        :return:
+        '''
         if not self.chan:
             # open a shell, and get a channel to the shell
             self.chan = self.client.invoke_shell()
@@ -601,7 +681,10 @@ class PyABS(SshInterpreter):
             logger.info('open channel-%s', self.chan.get_id())
 
     def close(self):
-        # close all terminal ssh from proxy, then close proxy channel
+        '''
+        close all terminal ssh from proxy, then close proxy channel
+        :return:
+        '''
         buff = ''
         logger.info('close PyABS opened terminals and channels')
         try:
@@ -615,9 +698,12 @@ class PyABS(SshInterpreter):
             logger.exception(buff)
         return buff
 
-    # ***************************************************************************************
-
     def login(self, timeout=10):
+        '''
+        establish ssh connection to current server
+        :param timeout: connection timeout
+        :return:
+        '''
         host = self.server.get('host')
         port = self.server.get('port')
         username = self.server.get('username')
@@ -650,22 +736,22 @@ class PyABS(SshInterpreter):
                 code = SUCCESS
             else:
                 msg = 'SSH authentication method not supported. %s:(%s)' % (host, auth_type)
-                code = AUTH_TYPE_ERR  # 不支持的认证方式
+                code = AUTH_TYPE_ERR  # error auth type
         except paramiko.BadHostKeyException, e:
             msg = 'SSH authentication key could not be verified.- %s@%s:%s - exception: %s' % (username, host, port, e)
-            code = WRONG_KEY  # 密码错或者用户错
+            code = WRONG_KEY  # mismatch key for user
         except paramiko.AuthenticationException, e:
             msg = 'SSH authentication failed.- %s@%s:%s - exception: %s' % (username, host, port, e)
-            code = WRONG_PASSWD  # 密码错或者用户错
+            code = WRONG_PASSWD  # mismatch password for user
         except paramiko.SSHException, e:
             msg = 'SSH connect failed.- %s@%s:%s - exception: %s' % (username, host, port, e)
-            code = SSH_LOGIN_EXP  # 登录失败，原因可能有not a valid RSA private key file， 密钥文件不存在
+            code = SSH_LOGIN_EXP  # ssh login exception, reasons maybe not a valid RSA private key file...
         except socket.error:
             msg = 'TCP connect failed, timeout(%ss passed). - %s@%s:%s' % (timeout, username, host, port)
-            code = TIMEOUT_ERR  # 超时
+            code = TIMEOUT_ERR  # socket timeout
         except Exception, e:
             msg = 'login exception - %s@%s:%s: %s' % (username, host, port, e)
-            code = LOGIN_EXCP  # 异常
+            code = LOGIN_EXCP  # other exception
         # log it
         if code == SUCCESS:
             logger.info(msg)
@@ -673,9 +759,13 @@ class PyABS(SshInterpreter):
             logger.exception(msg)
         return code, msg
 
-    # ***************************************************************************************
-
     def ssh(self, server, timeout=10):
+        '''
+        establish ssh connection over current server to another server
+        :param server:
+        :param timeout:
+        :return:
+        '''
         host = server.get('host')
         port = server.get('port')
         username = server.get('username')
@@ -705,6 +795,14 @@ class PyABS(SshInterpreter):
         return terminal, code, output
 
     def scp(self, server, src, dst, timeout=10):
+        '''
+        execute scp ops over current server to another server
+        :param server:
+        :param src:
+        :param dst:
+        :param timeout:
+        :return:
+        '''
         host = server.get('host')
         port = server.get('port')
         username = server.get('username')
@@ -737,16 +835,23 @@ class PyABS(SshInterpreter):
             self.safe_close(chan)
         return code, output
 
-    # ***************************************************************************************
-
     def open_sftp(self):
+        '''
+        Open an SFTP session on the SSH server.
+        :return:
+        '''
         # sftp = paramiko.SFTPClient.from_transport(client.get_transport())
-        # Open an SFTP session on the SSH server.
         sftp = self.client.open_sftp()
         logger.info('open_sftp: open sftp session success.')
         return sftp
 
     def sftp(self, src, dst):
+        '''
+        execute real sftp operation using paramiko api
+        :param src:
+        :param dst:
+        :return:
+        '''
         # sftp = paramiko.SFTPClient.from_transport(client.get_transport())
         sftp = self.open_sftp()
         try:
@@ -770,9 +875,12 @@ class PyABS(SshInterpreter):
             self.safe_close(sftp)
         return ret, code
 
-    # ***************************************************************************************
-
     def send_key(self, key):
+        '''
+        send private key file for ssh key auth
+        :param key:
+        :return:
+        '''
         sftp = self.open_sftp()
         try:
             self.mkdir(REMOTE_KEY_PATH)
@@ -781,7 +889,7 @@ class PyABS(SshInterpreter):
             logger.debug('send_key from %s to %s', src, dst)
             ret = sftp.put(src, dst)
             logger.debug("send_key: chmod %s's mode to 0400", dst)
-            sftp.chmod(dst, 0400)
+            sftp.chmod(dst, 0600)
             code = SEND_KEY_SUCCESS
         except Exception, e:
             logger.exception('send_key exception: %s', e)
@@ -793,6 +901,11 @@ class PyABS(SshInterpreter):
         return ret, code
 
     def mkdir(self, directory):
+        '''
+        imp mkdir ops and support mkdir -p
+        :param directory:
+        :return:
+        '''
         def _m(sftp, directory):
             # absolute directory
             if directory == '/':
@@ -824,6 +937,12 @@ class PyABS(SshInterpreter):
         return ret
 
     def rm(self, path, level=0):
+        '''
+        rm files which support recursive
+        :param path:
+        :param level:
+        :return:
+        '''
         def _r(sftp, path, level=0):
             for f in sftp.listdir_attr(path):
                 rpath = posixpath.join(path, f.filename)
@@ -845,4 +964,3 @@ class PyABS(SshInterpreter):
             logger.debug('rm: safe close sftp')
             self.safe_close(sftp)
         return ret
-        # ***************************************************************************************
