@@ -271,7 +271,7 @@ class SshInterpreter(object):
             chan.sendall(cmd)
             self.wait_for_recv_ready(chan)
             buff = self.wait_for_cmd_over(chan, timeout)
-            logger.info('ended execute: %s%s>\n %s \n%s<\n', cmd, '-'*100, buff, '-'*100)
+            logger.info('ended execute: %s%s>\n %s \n%s<\n', cmd, '-' * 100, buff, '-' * 100)
         except ExecuteException, e:
             logger.exception('execute ExecuteException: %s', e)
         except Exception, e:
@@ -501,6 +501,7 @@ class SshInterpreter(object):
             elif self.is_common_error(buff):
                 return COMMON_ERROR, output
 
+
 # =================================================================================================================
 class PyABSException(Exception):
     pass
@@ -549,7 +550,7 @@ class PyTerminal(SshInterpreter):
                 logger.error('ssh failed, code: [%s]', code)
             else:
                 logger.info('ssh %s@%s using(%s) success.', username, host, self.trans.get(auth_type))
-            logger.debug('ssh: %s %s>\n %s \n%s<', cmd, '-'*100, output,  '-'*100)
+            logger.debug('ssh: %s %s>\n %s \n%s<', cmd, '-' * 100, output, '-' * 100)
 
         except Exception as e:
             code, output = SSH_EXP, 'ssh exception'
@@ -574,16 +575,16 @@ class PyTerminal(SshInterpreter):
                 logger.error('scp failed, code: %s', code)
             else:
                 logger.info('scp %s to %s success, elapsed %ss', src, dst, elapsed)
-            logger.debug('scp: %s %s>\n %s \n%s<', cmd, '-'*100, output,  '-'*100)
+            logger.debug('scp: %s %s>\n %s \n%s<', cmd, '-' * 100, output, '-' * 100)
 
         except Exception as e:
             code, output = SCP_EXP, 'scp exception'
             logger.exception('scp exception: %s', e)
         return code, output
 
+
 # =================================================================================================================
 class PyABS(SshInterpreter):
-
     def __init__(self, server):
         # super(PyABS, self).__init__()  # multi inherit
         SshInterpreter.__init__(self, None)
@@ -613,6 +614,7 @@ class PyABS(SshInterpreter):
             buff += 'close pyabs exception: %s' % e
             logger.exception(buff)
         return buff
+
     # ***************************************************************************************
 
     def login(self, timeout=10):
@@ -670,6 +672,7 @@ class PyABS(SshInterpreter):
         else:
             logger.exception(msg)
         return code, msg
+
     # ***************************************************************************************
 
     def ssh(self, server, timeout=10):
@@ -692,7 +695,7 @@ class PyABS(SshInterpreter):
                 logger.error('ssh failed, code: [%s]', code)
             else:
                 logger.info('ssh %s@%s using(%s) success.', username, host, self.trans.get(auth_type))
-            logger.debug('ssh: %s %s>\n %s \n%s<', cmd, '-'*100, output,  '-'*100)
+            logger.debug('ssh: %s %s>\n %s \n%s<', cmd, '-' * 100, output, '-' * 100)
 
             terminal = PyTerminal(chan)
             self.terminal.append(terminal)
@@ -724,7 +727,7 @@ class PyABS(SshInterpreter):
                 logger.error('scp failed, code: %s', code)
             else:
                 logger.info('scp %s to %s success, elapsed %ss', src, dst, elapsed)
-            logger.debug('scp: %s %s>\n %s \n%s<', cmd, '-'*100, output,  '-'*100)
+            logger.debug('scp: %s %s>\n %s \n%s<', cmd, '-' * 100, output, '-' * 100)
 
         except Exception as e:
             code, output = SCP_EXP, 'scp exception'
@@ -733,6 +736,7 @@ class PyABS(SshInterpreter):
             logger.debug('scp: safe close channel for scp')
             self.safe_close(chan)
         return code, output
+
     # ***************************************************************************************
 
     def open_sftp(self):
@@ -754,7 +758,8 @@ class PyABS(SshInterpreter):
             end_time = datetime.datetime.now()
             end_clock = time.clock()
             elapsed = end_clock - start_clock
-            logger.info('sftp %s to %s success, size: %s bytes, elapsed: %ss [%s]', src, dst, ret.st_size, elapsed, end_time)
+            logger.info('sftp %s to %s success, size: %s bytes, elapsed: %ss [%s]', src, dst, ret.st_size, elapsed,
+                        end_time)
             code = SFTP_SUCCESS
         except Exception, e:
             logger.exception('sftp %s failed, exception: %s', src, e)
@@ -764,6 +769,7 @@ class PyABS(SshInterpreter):
             logger.info('sftp: safe close sftp session')
             self.safe_close(sftp)
         return ret, code
+
     # ***************************************************************************************
 
     def send_key(self, key):
@@ -839,82 +845,4 @@ class PyABS(SshInterpreter):
             logger.debug('rm: safe close sftp')
             self.safe_close(sftp)
         return ret
-    # ***************************************************************************************
-
-def test():
-    proxy = {
-        'host': '11.11.1.2', 'port': 22, 'username': 'vagrant', 'password': 'vagrant', 'auth_type': 'p', 'key_path': 'id_rsa'
-    }
-    client1 = {'host': '11.11.1.3', 'port': 22, 'username': 'vagrant', 'password': 'vagrant', 'auth_type': 'p'}
-    client2 = {'host': '11.11.1.4', 'port': 22, 'username': 'vagrant', 'password': 'vagrant', 'auth_type': 'p', 'key_path': '~/.ssh/id_dsa'}
-    client3 = {'host': '11.11.1.5', 'port': 22, 'username': 'vagrant', 'password': 'vagrant', 'auth_type': 'p', 'key_path': '~/.ssh/id_rsa'}
-    client4 = {'host': '11.11.1.6', 'port': 22, 'username': 'vagrant', 'password': 'vagrant', 'auth_type': 'p'}
-    client5 = {'host': '11.11.1.7', 'port': 22, 'username': 'vagrant', 'password': 'vagrant', 'auth_type': 'p'}
-
-    pabs = PyABS(proxy)
-    pclient5 = PyABS(client5)
-    # ===========================================pabs->proxy======================================================
-    logger.warning('++++++++++++++++pabs->proxy++++++++++++++++')
-    code, msg = pabs.login(timeout=3)
-    if code == SUCCESS:
-        ret = pabs.rm('/tmp/test')
-        if ret:
-            logger.debug('rm success.')
-        pabs.mkdir('/tmp/test/')
-        filename = os.path.basename(__file__)
-        ret, code = pabs.sftp(filename, '/tmp/test/%s' % filename)
-        if code == SFTP_SUCCESS:
-            logger.debug('sftp %s bytes.' % ret.st_size)
-            pabs.open_channel()   # must open channel befroe excute cmd
-            pabs.exec_command('cd /tmp')
-            pabs.exec_command('tar -zcvf test.tar.gz /tmp/*', timeout=60)
-            pabs.exec_command('ls /tmp -l')
-            # =========================================proxy->client1[t1]=========================================================
-            logger.warning('++++++++++++++++proxy->client1[t1]++++++++++++++++')
-            pabs.scp(client1, src='/tmp/*.tar.gz', dst='/tmp/')
-            pabs.scp(client1, src='/tmp/a.mp4', dst='/tmp/')
-            pabs.scp(client1, src='/tmp/b.mp4', dst='/tmp/')
-            pabs.scp(client1, src='/tmp/c.mp4', dst='/tmp/')
-            pabs.scp(client1, src='/tmp/d.mp4', dst='/tmp/')
-            pabs.scp(client1, src='/tmp/e.mp4', dst='/tmp/')
-            pabs.scp(client1, src='/tmp/f.mp4', dst='/tmp/')
-            t1, code, output = pabs.ssh(client1)
-            assert(code == SUCCESS)
-            t1.exec_command('ip addr show eth1 && hostname')
-            t1.exec_command('ls /tmp/ -l')
-            # =========================================client1->client3[t1]=========================================================
-            logger.warning('++++++++++++++++client1->client3[t1]++++++++++++++++')
-            code, output = t1.scp(client3, src='/tmp/test.tar.gz', dst='/tmp/')
-            assert(code == SUCCESS)
-            code, output = t1.ssh(client3)
-            assert(code == SUCCESS)
-            t1.exec_command('ip addr show eth1 && hostname')
-            t1.exec_command('ls /tmp/ -l')
-            # =========================================proxy->client2[t2]=========================================================
-            logger.warning('++++++++++++++++proxy->client2[t2]++++++++++++++++')
-            pabs.scp(client2, src='/tmp/*.tar.gz', dst='/tmp/')
-            t2, code, output = pabs.ssh(client2)
-            assert(code == SUCCESS)
-            t2.exec_command('ip addr show eth1 && hostname')
-            t2.exec_command('ls /tmp/ -l')
-
-            # =========================================client2->client4[t2]=========================================================
-            logger.warning('++++++++++++++++client2->client4[t1]++++++++++++++++')
-            code, output = t2.scp(client4, src='/tmp/test.tar.gz', dst='/tmp/')
-            assert(code == SUCCESS)
-            code, output = t2.ssh(client4)
-            assert(code == SUCCESS)
-            t2.exec_command('ls /tmp/ -l')
-            # ==================================================================================================
-            pabs.close()
-            # ==================================================================================================
-            logger.warning('++++++++++++++++client5++++++++++++++++')
-    code, msg = pclient5.login(timeout=3)
-    if code == SUCCESS:
-        pclient5.mkdir('/tmp/test')
-    else:
-        logger.debug(msg)
-    pclient5.close()
-
-# if __name__ == '__main__':
-    # test()
+        # ***************************************************************************************
