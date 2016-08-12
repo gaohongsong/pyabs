@@ -216,3 +216,4 @@ if __name__ == '__main__':
     test_multi_file1.delay(client1, ['a.mp4', 'b.mp4', 'c.mp4', 'd.mp4', 'e.mp4', 'f.mp4', 'a.zip', 'b.zip'], '/tmp', client2)
     # test_multi_file.delay(client1, ['a.mp4', 'b.mp4', 'c.mp4', 'd.mp4', 'e.mp4', 'f.mp4'], '/tmp')
     # test_multi_file.delay(client2, ['a.mp4', 'b.mp4', 'c.mp4', 'd.mp4', 'e.mp4', 'f.mp4'], '/tmp')
+    return 0
