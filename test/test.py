@@ -94,4 +94,5 @@ def test():
 
 if __name__ == '__main__':
     test()
+    print 'xxxxx'
     return 0
