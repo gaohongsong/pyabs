@@ -2,7 +2,6 @@
 import os
 import sys
 import time
-from datetime import datetime
 import gevent
 import random
 from celery import Celery
