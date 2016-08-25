@@ -145,4 +145,3 @@ if __name__ == '__main__':
     test_with_timeout.delay()
     test_timeout.delay(4, -9999)
     test_timeout1.delay(4, -9999)
-    return 0
